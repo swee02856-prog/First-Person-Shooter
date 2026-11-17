@@ -6,6 +6,8 @@ app = Ursina()
 player = FirstPersonController()
 player.y += 2
 
+gun = Entity(parent=camera, model='cube',color=color.black, scale = (0.3, 0.2, 1),position=(0.5, -0.5, 1))
+
 def shoot():
     hit = raycast(camera.world_position, camera.forward,distance=100)
     if hit.hit:
