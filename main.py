@@ -6,7 +6,8 @@ app = Ursina()
 player = FirstPersonController()
 player.y += 2
 
-gun = Entity(parent=camera, model='cube',color=color.black, scale = (0.3, 0.2, 1),position=(0.5, -0.5, 1))
+gun = Entity(parent=camera, model='gun.obj',color=color.black,position=(1.5, -1, 2), scale=0.8)
+gun_start_y = gun.y
 
 def shoot():
     hit = raycast(camera.world_position, camera.forward,distance=100)
@@ -35,6 +36,7 @@ def update():
     enemy1.look_at(player)
     enemy1.rotation_x = 0
     enemy1.rotation_z = 0
+    gun.y = gun_start_y + sin(time.time() * 2) * 0.05
 enemy1 = Entity(model='cube',color=color.red,scale=2,position=(0, 1, 5), collider='box')
 enemy1.health = 100
 enemyshoot()
