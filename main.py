@@ -1,10 +1,11 @@
 from ursina import *
 from ursina.prefabs.first_person_controller import FirstPersonController
+import random
 
 app = Ursina()
 
 player = FirstPersonController()
-player.y += 2
+player.y += 3
 
 viewmodelarm = Entity(parent=camera, model='models/arm.obj', color=color.peach, position=(1.1, -1, 0.5), scale=0.3)
 gun = Entity(parent=camera, model='models/gun.obj',color=color.black,position=(1.5, -1, 2), scale=0.8)
@@ -27,16 +28,21 @@ def shoot():
                 enemydead = True
                 print(f"You killed {hit.entity}")
                 hit.entity.disable()
+                invoke(respawnenemy, delay=1)
 
 def enemyshoot():
-    if not enemy1.enabled:
-        return
     invoke(enemyshoot, delay=2)
-    direction = Vec3(player.x - enemy1.x, 0, player.z - enemy1.z).normalized()
-    bullet = Entity(model="cube",color=color.yellow,scale=0.2, position=enemy1.position)
-    def move_bullet():
-        bullet.position += direction * 5 * time.dt
-    bullet.update = move_bullet
+    if enemy1.enabled:    
+        direction = Vec3(player.x - enemy1.x, 0, player.z - enemy1.z).normalized()
+        bullet = Entity(model="cube",color=color.yellow,scale=0.2, position=enemy1.position)
+        def move_bullet():
+            bullet.position += direction * 5 * time.dt
+        bullet.update = move_bullet
+
+def respawnenemy():
+    enemy1.enable()
+    enemy1.health = 100
+    enemy1.position = (random.uniform(-8, 8), 2.0, random.uniform(-8, 8))
 
 def input(key):
     if key == 'left mouse down':
@@ -44,7 +50,7 @@ def input(key):
 
 def update():
     global recoil
-    if enemydead == False:
+    if enemy1.enabled:
         enemy1.look_at(player)
         enemy1.rotation_x = 0
         enemy1.rotation_z = 0
@@ -61,10 +67,9 @@ def update():
  
 Sky()
 
-
-enemy1 = Entity(model='cube',color=color.red,scale=2,position=(0, 1, 5), collider='box')
-enemy1.health = 100
+enemy1 = Entity(model='models/bean.obj',color=color.white,scale=0.75,position=(0, 2, 5), collider='box')
 enemyshoot()
+enemy1.health = 100
 enemydead = False
 
 floor = Entity(model='plane',scale=20,color=color.green,collider='box')
