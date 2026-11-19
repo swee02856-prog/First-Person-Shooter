@@ -18,6 +18,7 @@ gun_start_y = gun.y
 gun_start_z = gun.z
 
 recoil = 0
+aiming = False
 
 def shoot():
     global recoil
@@ -58,13 +59,26 @@ def input(key):
         shoot()
     if key == 'right mouse down':
         ads()
+    if key == 'right mouse up':
+        unads()
 
 def ads():
-    global gun_start_x, gun_start_y, gun_start_z
+    global gun_start_x, gun_start_y, gun_start_z, aiming
+    aiming = True
     gun_start_x = 0.65
-    gun_start_y = -0.75
+    gun_start_y = -0.72
     gun_start_z = 1.3 
-    viewmodelarm.position = (0.1, -0.9, -0.2)
+    viewmodelarm.position = 0, -0.6, -0.2
+    viewmodelarm.scale = 0.20
+
+def unads():
+    global gun_start_x, gun_start_y, gun_start_z, aiming
+    aiming = False
+    gun_start_x = 1.5
+    gun_start_y = -1
+    gun_start_z = 2
+    viewmodelarm.position = 1.1, -1, 0.5
+    viewmodelarm.scale = 0.3
 
 def update():
     global recoil
@@ -74,7 +88,10 @@ def update():
         enemy1.rotation_z = 0
     MOVING = (held_keys['w'] or held_keys['s'] or held_keys['a'] or held_keys['d'])
     recoil = lerp(recoil, 0, 10 * time.dt) # makes gun go down after recoil
-    if MOVING:
+    if aiming:
+        bob_speed = 2
+        bob_amount = 0.01
+    elif MOVING:
         bob_speed = 6
         bob_amount = 0.1
     else:
