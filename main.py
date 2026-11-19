@@ -5,12 +5,16 @@ import random
 app = Ursina()
 
 player = FirstPersonController()
-player.y += 3
+playerhealth = 100
+playerhitbox = Entity(parent=player, model='models/bean.obj', scale=(0.75), visible=False, collider='box')
+player.ignore_list.append(playerhitbox)
+PlayerHealthText = Text(text=f"HP: {playerhealth}",position=(-0.6, -0.35), scale=(4.5))
+
 
 viewmodelarm = Entity(parent=camera, model='models/arm.obj', color=color.peach, position=(1.1, -1, 0.5), scale=0.3)
 gun = Entity(parent=camera, model='models/gun.obj',color=color.black,position=(1.5, -1, 2), scale=0.8)
-gun_start_y = gun.y
 gun_start_x = gun.x
+gun_start_y = gun.y
 gun_start_z = gun.z
 
 recoil = 0
@@ -33,11 +37,16 @@ def shoot():
 def enemyshoot():
     invoke(enemyshoot, delay=2)
     if enemy1.enabled:    
-        direction = Vec3(player.x - enemy1.x, 0, player.z - enemy1.z).normalized()
-        bullet = Entity(model="cube",color=color.yellow,scale=0.2, position=enemy1.position)
+        direction = Vec3((player.position + Vec3(0, 1.5, 0)) - enemy1.position).normalized()
+        bullet = Entity(model="cube",color=color.yellow,scale=0.2, position=enemy1.position, collider='box')
         def move_bullet():
             bullet.position += direction * 5 * time.dt
+            if distance(bullet.position, player.position + Vec3(0, 1.5, 0)) < 0.8:
+                playerHit()
+                bullet.disable()
+                destroy(bullet)
         bullet.update = move_bullet
+        destroy(bullet, delay=6)
 
 def respawnenemy():
     enemy1.enable()
@@ -47,6 +56,15 @@ def respawnenemy():
 def input(key):
     if key == 'left mouse down':
         shoot()
+    if key == 'right mouse down':
+        ads()
+
+def ads():
+    global gun_start_x, gun_start_y, gun_start_z
+    gun_start_x = 0.65
+    gun_start_y = -0.75
+    gun_start_z = 1.3 
+    viewmodelarm.position = (0.1, -0.9, -0.2)
 
 def update():
     global recoil
@@ -64,7 +82,13 @@ def update():
         bob_amount = 0.05
     gun.y = gun_start_y + sin(time.time() * bob_speed) * bob_amount
     gun.z = gun_start_z - recoil
+    gun.x = gun_start_x
  
+def playerHit():
+    global playerhealth
+    playerhealth -= 10
+    PlayerHealthText.text = f"HP: {playerhealth}"
+    print("You lost 10 hp!")
 Sky()
 
 enemy1 = Entity(model='models/bean.obj',color=color.white,scale=0.75,position=(0, 2, 5), collider='box')
