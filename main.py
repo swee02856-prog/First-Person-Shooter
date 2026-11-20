@@ -17,6 +17,7 @@ gun_start_x = gun.x
 gun_start_y = gun.y
 gun_start_z = gun.z
 
+gamestarted = False
 recoil = 0
 aiming = False
 
@@ -37,7 +38,7 @@ def shoot():
 
 def enemyshoot():
     invoke(enemyshoot, delay=2)
-    if enemy1.enabled:    
+    if enemy1.enabled and gamestarted:    
         direction = Vec3((player.position + Vec3(0, 1.5, 0)) - enemy1.position).normalized()
         bullet = Entity(model="cube",color=color.yellow,scale=0.2, position=enemy1.position, collider='box')
         def move_bullet():
@@ -55,6 +56,8 @@ def respawnenemy():
     enemy1.position = (random.uniform(-8, 8), 2.0, random.uniform(-8, 8))
 
 def input(key):
+    if not gamestarted:
+        return
     if key == 'left mouse down':
         shoot()
     if key == 'right mouse down':
@@ -82,6 +85,8 @@ def unads():
 
 def update():
     global recoil
+    death()
+    PlayerHealthText.text = f"HP: {playerhealth}"
     if enemy1.enabled:
         enemy1.look_at(player)
         enemy1.rotation_x = 0
@@ -100,11 +105,10 @@ def update():
     gun.y = gun_start_y + sin(time.time() * bob_speed) * bob_amount
     gun.z = gun_start_z - recoil
     gun.x = gun_start_x
- 
+
 def playerHit():
     global playerhealth
     playerhealth -= 10
-    PlayerHealthText.text = f"HP: {playerhealth}"
     print("You lost 10 hp!")
 Sky()
 
@@ -120,4 +124,38 @@ wall2 = Entity(model='cube',scale=(20, 3, 1),position=(0, 1.5, -10),color=color.
 wall3 = Entity(model='cube',scale=(1, 3, 20),position=(10, 1.5, 0),color=color.gray,collider='box')
 wall4 = Entity(model='cube',scale=(1, 3, 20),position=(-10, 1.5, 0),color=color.gray,collider='box')
 
+title = Text(text='Fps Gaem', origin=(0, 0), y=0.25, scale=3)
+startbutton = Button(text='start!?', scale=(0.25, 0.1), y=-0.05)
+
+def start_game():
+    global gamestarted, playerhealth
+    playerhealth = 100
+    gamestarted = True
+    title.disable()
+    startbutton.disable()
+    gameovertext.disable()
+    restartbutton.disable()
+    player.enable()
+    mouse.locked = True
+
+def game_over():
+    global gamestarted
+    gamestarted = False
+    player.disable()
+    mouse.locked = False
+    gameovertext.enable()
+    restartbutton.enable()
+
+def death():
+    if playerhealth <= 0 and gamestarted:
+        game_over()
+mouse.locked = False
+player.disable()
+
+gameovertext = Text(text='You died..!', origin=(0, 0), y=0.25, scale=3, color=color.red)
+restartbutton = Button(text='Restart!?', scale=(0.25, 0.1), y=-0.05)
+gameovertext.disable()
+restartbutton.disable()
+restartbutton.on_click = start_game
+startbutton.on_click = start_game
 app.run()
