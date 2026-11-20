@@ -3,13 +3,13 @@ from ursina.prefabs.first_person_controller import FirstPersonController
 import random
 
 app = Ursina()
+Sky()
 
 player = FirstPersonController()
 playerhealth = 100
 playerhitbox = Entity(parent=player, model='models/bean.obj', scale=(0.75), visible=False, collider='box')
 player.ignore_list.append(playerhitbox)
 PlayerHealthText = Text(text=f"HP: {playerhealth}",position=(-0.6, -0.35), scale=(4.5))
-
 
 viewmodelarm = Entity(parent=camera, model='models/arm.obj', color=color.peach, position=(1.1, -1, 0.5), scale=0.3)
 gun = Entity(parent=camera, model='models/gun.obj',color=color.black,position=(1.5, -1, 2), scale=0.8)
@@ -22,6 +22,9 @@ recoil = 0
 aiming = False
 
 def shoot():
+    '''Player raycast shooting system, every click input shoots a raycast
+    towards player cursor and makes sure that it only deals damage towards enemies
+    '''
     global recoil
     recoil = 0.5
     hit = raycast(camera.world_position, camera.forward,distance=100)
@@ -36,12 +39,19 @@ def shoot():
                 hit.entity.disable()
                 invoke(respawnenemy, delay=1)
 
-def enemyshoot():
-    invoke(enemyshoot, delay=2)
+def enemy1shoot():
+    '''enemy shooting mechanic, every two seconds the enemy shoots a projectile
+    that if hit deals 10 damage to the player
+    '''
+    invoke(enemy1shoot, delay=2)
     if enemy1.enabled and gamestarted:    
         direction = Vec3((player.position + Vec3(0, 1.5, 0)) - enemy1.position).normalized()
         bullet = Entity(model="cube",color=color.yellow,scale=0.2, position=enemy1.position, collider='box')
         def move_bullet():
+            '''Bullet velocity mechanic which shoots towards current
+            player position and gets destroyed after 6 seconds or after
+            inside player vector
+            '''
             bullet.position += direction * 5 * time.dt
             if distance(bullet.position, player.position + Vec3(0, 1.5, 0)) < 0.8:
                 playerHit()
@@ -51,6 +61,9 @@ def enemyshoot():
         destroy(bullet, delay=6)
 
 def respawnenemy():
+    '''When this function is called, Enemy1 is randomly respawned anywhere on the xy
+    axis of the floor plane
+    '''
     enemy1.enable()
     enemy1.health = 100
     enemy1.position = (random.uniform(-8, 8), 2.0, random.uniform(-8, 8))
@@ -66,6 +79,9 @@ def input(key):
         unads()
 
 def ads():
+    '''brings gun viewmodel and arm towards the center of the screen when the player
+    holds down right click
+    '''
     global gun_start_x, gun_start_y, gun_start_z, aiming
     aiming = True
     gun_start_x = 0.65
@@ -75,6 +91,8 @@ def ads():
     viewmodelarm.scale = 0.20
 
 def unads():
+    '''moves gun back to starting position when player releases right click
+    '''
     global gun_start_x, gun_start_y, gun_start_z, aiming
     aiming = False
     gun_start_x = 1.5
@@ -84,6 +102,8 @@ def unads():
     viewmodelarm.scale = 0.3
 
 def update():
+    '''functions as a while loop. It updates all entities, objects, & inputs every tick
+    '''
     global recoil
     death()
     PlayerHealthText.text = f"HP: {playerhealth}"
@@ -107,13 +127,15 @@ def update():
     gun.x = gun_start_x
 
 def playerHit():
+    '''If enemy bullet touches the Player Vector, the player loses
+    health
+    '''
     global playerhealth
     playerhealth -= 10
     print("You lost 10 hp!")
-Sky()
 
 enemy1 = Entity(model='models/bean.obj',color=color.white,scale=0.75,position=(0, 2, 5), collider='box')
-enemyshoot()
+enemy1shoot()
 enemy1.health = 100
 enemydead = False
 
@@ -128,6 +150,9 @@ title = Text(text='Fps Gaem', origin=(0, 0), y=0.25, scale=3)
 startbutton = Button(text='start!?', scale=(0.25, 0.1), y=-0.05)
 
 def start_game():
+    '''When Player launches the game the cursor is unlocked, the player
+    is given the option to manually start the game
+    '''
     global gamestarted, playerhealth
     playerhealth = 100
     gamestarted = True
@@ -139,6 +164,9 @@ def start_game():
     mouse.locked = True
 
 def game_over():
+    '''When this function is called, the game gives the player
+    the option to restart or exit the game
+    '''
     global gamestarted
     gamestarted = False
     player.disable()
@@ -147,6 +175,9 @@ def game_over():
     restartbutton.enable()
 
 def death():
+    '''when this function is called, the game checks if Playerhealth is less than
+    or equal to 0, if true it calls for the game_over function
+    '''
     if playerhealth <= 0 and gamestarted:
         game_over()
 mouse.locked = False
