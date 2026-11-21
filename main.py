@@ -1,6 +1,7 @@
 from ursina import *
 from ursina.prefabs.first_person_controller import FirstPersonController
 from ursina.shaders import basic_lighting_shader
+from ursina.prefabs.trail_renderer import TrailRenderer
 import random
 
 app = Ursina()
@@ -22,6 +23,7 @@ gun_start_z = gun.z
 gamestarted = False
 recoil = 0
 aiming = False
+EnemiesLeft = 10
 
 def shoot():
     '''Player raycast shooting system, every click input shoots a raycast
@@ -46,28 +48,40 @@ def enemy1shoot():
     '''
     invoke(enemy1shoot, delay=2)
     if enemy1.enabled and gamestarted:    
-        direction = Vec3((player.position + Vec3(0, 1.5, 0)) - enemy1.position).normalized()
-        bullet = Entity(model="cube",color=color.yellow,scale=0.2, position=enemy1.position, collider='box')
+        direction = Vec3((player.position + Vec3(0, 1.5, 0)) - enemygun.world_position).normalized()
+        bullet = Entity(model="cube",color=color.yellow,scale=0.2, position=enemygun.world_position, collider='box')
+        bullettrail = TrailRenderer(parent=bullet, size=(0.2, 0.2),color=color.yellow,segments=12)
         def move_bullet():
             '''Bullet velocity mechanic which shoots towards current
             player position and gets destroyed after 6 seconds or after
             inside player vector
             '''
-            bullet.position += direction * 5 * time.dt
+            bullet.position += direction * 30 * time.dt
             if distance(bullet.position, player.position + Vec3(0, 1.5, 0)) < 0.8:
                 playerHit()
                 bullet.disable()
                 destroy(bullet)
+                destroy(bullettrail)
         bullet.update = move_bullet
         destroy(bullet, delay=6)
+        enemygunspin()
+
+def enemygunspin():
+    '''when this function is called, it spins the enemys gun which is parented
+    to the enemy1 to spin counterclockwise in a full 360 degrees for 1 second'''
+    global enemygun
+    enemygun.rotation_x = 0
+    enemygun.animate('rotation_x', -360, duration=1,curve=curve.out_expo)
 
 def respawnenemy():
     '''When this function is called, Enemy1 is randomly respawned anywhere on the xy
     axis of the floor plane
     '''
+    global EnemiesLeft
     enemy1.enable()
     enemy1.health = 100
     enemy1.position = (random.uniform(-8, 8), 2.0, random.uniform(-8, 8))
+    EnemiesLeft -= 1
 
 def input(key):
     if not gamestarted:
@@ -107,7 +121,9 @@ def update():
     '''
     global recoil
     death()
+    win()
     PlayerHealthText.text = f"HP: {playerhealth}"
+    enemiesLeftText.text = f'EnemysLeft: {EnemiesLeft}'
     if enemy1.enabled:
         enemy1.look_at(player)
         enemy1.rotation_x = 0
@@ -132,21 +148,22 @@ def playerHit():
     health
     '''
     global playerhealth
-    playerhealth -= 100
+    playerhealth -= 10
     print("You lost 10 hp!")
 
 enemy1 = Entity(model='models/bean.obj',color=color.white,scale=0.75,position=(0, 2, 5), collider='box')
 enemy1shoot()
 enemy1.health = 100
 
-floor = Entity(model='plane',scale=20,color=color.green,collider='box')
+enemygun = Entity(parent=enemy1, model='models/gun.obj', color=color.black, position=(1.5, -0.4, 0.5), scale=0.5)
 
-wall1 = Entity(model='cube', scale=(20, 3, 1), position=(0, 1.5,10), color=color.gray, collider='box')
-wall2 = Entity(model='cube',scale=(20, 3, 1),position=(0, 1.5, -10),color=color.gray,collider='box')
-wall3 = Entity(model='cube',scale=(1, 3, 20),position=(10, 1.5, 0),color=color.gray,collider='box')
-wall4 = Entity(model='cube',scale=(1, 3, 20),position=(-10, 1.5, 0),color=color.gray,collider='box')
+floor = Entity(model='plane',scale=100,color=color.green,collider='box')
 
-title = Text(text='Fps Gaem', origin=(0, 0), y=0.25, scale=3)
+wall1 = Entity(model='cube', scale=(100, 3, 1), position=(0, 1.5,50), color=color.gray, collider='box')
+wall2 = Entity(model='cube',scale=(100, 3, 1),position=(0, 1.5, -50),color=color.gray,collider='box')
+wall3 = Entity(model='cube',scale=(1, 3, 100),position=(50, 1.5, 0),color=color.gray,collider='box')
+wall4 = Entity(model='cube',scale=(1, 3, 100),position=(-50, 1.5, 0),color=color.gray,collider='box')
+
 startbutton = Button(text='start!?', scale=(0.25, 0.1), y=-0.05)
 
 def spawn_point():
@@ -157,7 +174,10 @@ def start_game():
     '''When Player launches the game the cursor is unlocked, the player
     is given the option to manually start the game
     '''
+    global EnemiesLeft
+    EnemiesLeft = 10
     spawn_point()
+    Winscreen.disable()
     redscreen.disable()
     gun.enable()
     viewmodelarm.enable()
@@ -165,7 +185,6 @@ def start_game():
     global gamestarted, playerhealth
     playerhealth = 100
     gamestarted = True
-    title.disable()
     startbutton.disable()
     restartbutton.disable()
     player.enable()
@@ -175,6 +194,7 @@ def game_over():
     '''When this function is called, the game gives the player
     the option to restart or exit the game
     '''
+    enemiesLeftText.disable()
     redscreen.enable()
     camera.animate('rotation_z', 70)
     camera.animate_y(-0.5)
@@ -186,12 +206,26 @@ def game_over():
     mouse.locked = False
     restartbutton.enable()
 
+def game_win():
+    WinText.enable()
+    enemiesLeftText.disable()
+    Winscreen.enable()
+    global gamestarted
+    gamestarted = False
+    mouse.locked = False
+    player.disable()
+    restartbutton.enable()
+
 def death():
     '''when this function is called, the game checks if Playerhealth is less than
     or equal to 0, if true it calls for the game_over function
     '''
     if playerhealth <= 0 and gamestarted:
         game_over()
+
+def win():
+    if EnemiesLeft == 0 and gamestarted:
+        game_win()
 
 mouse.locked = False
 player.disable()
@@ -201,6 +235,11 @@ restartbutton = Button(text='Restart!?', scale=(0.25, 0.1), y=-0.05)
 restartbutton.disable()
 restartbutton.on_click = start_game
 startbutton.on_click = start_game
+
+enemiesLeftText = Text(text=f'EnemysLeft: {EnemiesLeft}', scale=3, position=(-0.6, 0.45), enabled=True)
+
+Winscreen = Entity(parent=camera.ui, model='quad', scale=(3, 3), color=Color(0, 1, 0, 0.5), enabled=False)
+WinText = Text(text='You have defeated the beans!', origin=(0, 0), position=(0, 0.25), scale=3.25, enabled=False)
 
 sun=DirectionalLight(shadows=False)
 sun.look_at(Vec3(1, -1, 1))
