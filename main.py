@@ -8,7 +8,7 @@ Sky()
 player = FirstPersonController()
 playerhealth = 100
 playerhitbox = Entity(parent=player, model='models/bean.obj', scale=(0.75), visible=False, collider='box')
-player.ignore_list.append(playerhitbox)
+player.ignore_list.append(playerhitbox) # hitbox ignores player character
 PlayerHealthText = Text(text=f"HP: {playerhealth}",position=(-0.6, -0.35), scale=(4.5))
 
 viewmodelarm = Entity(parent=camera, model='models/arm.obj', color=color.peach, position=(1.1, -1, 0.5), scale=0.3)
@@ -34,7 +34,6 @@ def shoot():
             print(f"You hit for {hit.entity.health} damage")
 
             if hit.entity.health <= 0:
-                enemydead = True
                 print(f"You killed {hit.entity}")
                 hit.entity.disable()
                 invoke(respawnenemy, delay=1)
@@ -131,13 +130,15 @@ def playerHit():
     health
     '''
     global playerhealth
-    playerhealth -= 10
+    playerhealth -= 100
     print("You lost 10 hp!")
 
 enemy1 = Entity(model='models/bean.obj',color=color.white,scale=0.75,position=(0, 2, 5), collider='box')
 enemy1shoot()
 enemy1.health = 100
-enemydead = False
+
+enemy2 = Entity(model="models/bean.obj", color=color.gray, scale=0.75, position=(3, 2, 2), collider='box')
+enemy2.health = 100
 
 floor = Entity(model='plane',scale=20,color=color.green,collider='box')
 
@@ -153,6 +154,9 @@ def start_game():
     '''When Player launches the game the cursor is unlocked, the player
     is given the option to manually start the game
     '''
+    gun.enable()
+    viewmodelarm.enable()
+    camera.rotation_z = 0
     global gamestarted, playerhealth
     playerhealth = 100
     gamestarted = True
@@ -167,6 +171,10 @@ def game_over():
     '''When this function is called, the game gives the player
     the option to restart or exit the game
     '''
+    camera.animate('rotation_z', 70)
+    camera.animate_y(-0.5)
+    viewmodelarm.disable()
+    gun.disable()
     global gamestarted
     gamestarted = False
     player.disable()
@@ -180,6 +188,7 @@ def death():
     '''
     if playerhealth <= 0 and gamestarted:
         game_over()
+
 mouse.locked = False
 player.disable()
 
