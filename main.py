@@ -1,8 +1,10 @@
 from ursina import *
 from ursina.prefabs.first_person_controller import FirstPersonController
+from ursina.shaders import basic_lighting_shader
 import random
 
 app = Ursina()
+Entity.default_shader = basic_lighting_shader
 Sky()
 
 player = FirstPersonController()
@@ -137,9 +139,6 @@ enemy1 = Entity(model='models/bean.obj',color=color.white,scale=0.75,position=(0
 enemy1shoot()
 enemy1.health = 100
 
-enemy2 = Entity(model="models/bean.obj", color=color.gray, scale=0.75, position=(3, 2, 2), collider='box')
-enemy2.health = 100
-
 floor = Entity(model='plane',scale=20,color=color.green,collider='box')
 
 wall1 = Entity(model='cube', scale=(20, 3, 1), position=(0, 1.5,10), color=color.gray, collider='box')
@@ -150,10 +149,16 @@ wall4 = Entity(model='cube',scale=(1, 3, 20),position=(-10, 1.5, 0),color=color.
 title = Text(text='Fps Gaem', origin=(0, 0), y=0.25, scale=3)
 startbutton = Button(text='start!?', scale=(0.25, 0.1), y=-0.05)
 
+def spawn_point():
+    player.x = 0
+    player.z = 0
+
 def start_game():
     '''When Player launches the game the cursor is unlocked, the player
     is given the option to manually start the game
     '''
+    spawn_point()
+    redscreen.disable()
     gun.enable()
     viewmodelarm.enable()
     camera.rotation_z = 0
@@ -162,7 +167,6 @@ def start_game():
     gamestarted = True
     title.disable()
     startbutton.disable()
-    gameovertext.disable()
     restartbutton.disable()
     player.enable()
     mouse.locked = True
@@ -171,6 +175,7 @@ def game_over():
     '''When this function is called, the game gives the player
     the option to restart or exit the game
     '''
+    redscreen.enable()
     camera.animate('rotation_z', 70)
     camera.animate_y(-0.5)
     viewmodelarm.disable()
@@ -179,7 +184,6 @@ def game_over():
     gamestarted = False
     player.disable()
     mouse.locked = False
-    gameovertext.enable()
     restartbutton.enable()
 
 def death():
@@ -192,10 +196,12 @@ def death():
 mouse.locked = False
 player.disable()
 
-gameovertext = Text(text='You died..!', origin=(0, 0), y=0.25, scale=3, color=color.red)
+redscreen = Entity(parent=camera.ui,model='quad',scale=(3,3), color=Color(1, 0, 0, 0.5), enabled=False)
 restartbutton = Button(text='Restart!?', scale=(0.25, 0.1), y=-0.05)
-gameovertext.disable()
 restartbutton.disable()
 restartbutton.on_click = start_game
 startbutton.on_click = start_game
+
+sun=DirectionalLight(shadows=False)
+sun.look_at(Vec3(1, -1, 1))
 app.run()
