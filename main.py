@@ -184,6 +184,8 @@ wall4 = Entity(model='cube',scale=(1, 3, 100),position=(-50, 1.5, 0),color=color
 startbutton = Button(text='start!?', scale=(0.25, 0.1), y=-0.05)
 
 def spawn_point():
+    """when this function is called, the player moves to coordinates
+    0x and 0z which is the middle of the map"""
     player.x = 0
     player.z = 0
 
@@ -232,6 +234,8 @@ def game_over():
     restartbutton.enable()
 
 def game_win():
+    '''when this function is called the game is considered as win
+    and pauses all player movement and actions just like game_over'''
     cheeringsound.play()
     WinText.enable()
     enemiesLeftText.disable()
@@ -250,6 +254,8 @@ def death():
         game_over()
 
 def win():
+    '''when this function is called the game checks if Current Enemiesleft
+    is equal to 0, if condition is true it calls game_win()'''
     if EnemiesLeft == 0 and gamestarted:
         game_win()
 
