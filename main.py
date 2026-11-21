@@ -8,6 +8,14 @@ app = Ursina()
 Entity.default_shader = basic_lighting_shader
 Sky()
 
+Walksound = Audio('walking.mp3', autoplay=False, loop=False)
+Shootsound = Audio('pistolshoot.mp3', autoplay=False)
+Enemyshootsound = Audio('enemyshoot.mp3', autoplay=False)
+popsound = Audio('pop.mp3', autoplay=False)
+hurtsound = Audio('hurtsound.mp3', autoplay=False)
+deathsound = Audio('halflifeDeath.mp3', autoplay=False)
+cheeringsound = Audio("cheer.mp3", autoplay=False)
+
 player = FirstPersonController()
 playerhealth = 100
 playerhitbox = Entity(parent=player, model='models/bean.obj', scale=(0.75), visible=False, collider='box')
@@ -30,24 +38,26 @@ def shoot():
     towards player cursor and makes sure that it only deals damage towards enemies
     '''
     global recoil
+    Shootsound.play()
     recoil = 0.5
     hit = raycast(camera.world_position, camera.forward,distance=100)
     if hit.hit:
         if hasattr(hit.entity, 'health'):
             hit.entity.health -= 25
             print(f"You hit for {hit.entity.health} damage")
-
             if hit.entity.health <= 0:
                 print(f"You killed {hit.entity}")
                 hit.entity.disable()
                 invoke(respawnenemy, delay=1)
+                popsound.play()
 
 def enemy1shoot():
     '''enemy shooting mechanic, every two seconds the enemy shoots a projectile
     that if hit deals 10 damage to the player
     '''
     invoke(enemy1shoot, delay=2)
-    if enemy1.enabled and gamestarted:    
+    if enemy1.enabled and gamestarted:
+        Enemyshootsound.play()    
         direction = Vec3((player.position + Vec3(0, 1.5, 0)) - enemygun.world_position).normalized()
         bullet = Entity(model="cube",color=color.yellow,scale=0.2, position=enemygun.world_position, collider='box')
         bullettrail = TrailRenderer(parent=bullet, size=(0.2, 0.2),color=color.yellow,segments=12)
@@ -62,8 +72,10 @@ def enemy1shoot():
                 bullet.disable()
                 destroy(bullet)
                 destroy(bullettrail)
+                hurtsound.play()
         bullet.update = move_bullet
         destroy(bullet, delay=6)
+        destroy(bullettrail, delay=6)
         enemygunspin()
 
 def enemygunspin():
@@ -130,6 +142,11 @@ def update():
         enemy1.rotation_z = 0
     MOVING = (held_keys['w'] or held_keys['s'] or held_keys['a'] or held_keys['d'])
     recoil = lerp(recoil, 0, 10 * time.dt) # makes gun go down after recoil
+    if MOVING and player.grounded and gamestarted:
+        if not Walksound.playing:
+            Walksound.play()
+    elif Walksound.playing:
+        Walksound.stop()
     if aiming:
         bob_speed = 2
         bob_amount = 0.01
@@ -151,7 +168,7 @@ def playerHit():
     playerhealth -= 10
     print("You lost 10 hp!")
 
-enemy1 = Entity(model='models/bean.obj',color=color.white,scale=0.75,position=(0, 2, 5), collider='box')
+enemy1 = Entity(model='models/bean.obj',color=color.white,scale=0.75,position=(0, 2, 10), collider='box')
 enemy1shoot()
 enemy1.health = 100
 
@@ -176,12 +193,19 @@ def start_game():
     '''
     global EnemiesLeft
     EnemiesLeft = 10
+    enemiesLeftText.enable()
+    enemy1.enable()
+    enemy1.health = 100
+    enemy1.position = 0, 2, 10
+    unads()
     spawn_point()
     Winscreen.disable()
     redscreen.disable()
+    WinText.disable()
     gun.enable()
     viewmodelarm.enable()
     camera.rotation_z = 0
+    camera.y = 0
     global gamestarted, playerhealth
     playerhealth = 100
     gamestarted = True
@@ -194,6 +218,7 @@ def game_over():
     '''When this function is called, the game gives the player
     the option to restart or exit the game
     '''
+    deathsound.play()
     enemiesLeftText.disable()
     redscreen.enable()
     camera.animate('rotation_z', 70)
@@ -207,6 +232,7 @@ def game_over():
     restartbutton.enable()
 
 def game_win():
+    cheeringsound.play()
     WinText.enable()
     enemiesLeftText.disable()
     Winscreen.enable()
@@ -236,7 +262,7 @@ restartbutton.disable()
 restartbutton.on_click = start_game
 startbutton.on_click = start_game
 
-enemiesLeftText = Text(text=f'EnemysLeft: {EnemiesLeft}', scale=3, position=(-0.6, 0.45), enabled=True)
+enemiesLeftText = Text(text=f'Enemies left: {EnemiesLeft}', scale=3, position=(-0.6, 0.45), enabled=True)
 
 Winscreen = Entity(parent=camera.ui, model='quad', scale=(3, 3), color=Color(0, 1, 0, 0.5), enabled=False)
 WinText = Text(text='You have defeated the beans!', origin=(0, 0), position=(0, 0.25), scale=3.25, enabled=False)
