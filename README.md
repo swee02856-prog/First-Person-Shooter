@@ -42,6 +42,8 @@ M1 - Shoot
 
 M2 (Hold) - Aim Down Sights
 
+<img width="300" height="250" alt="Screenshot_2026-11-21_18-01-53" src="https://github.com/user-attachments/assets/f88bebb6-65f8-4bba-9835-ab01705fe8f8" />
+
 **And thats all! Have fun!**
 
 This project was submitted to the Hackclub Terra ysws
