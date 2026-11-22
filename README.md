@@ -26,6 +26,8 @@ The beans shoot yellow bullets at you every few seconds and you have to dodge th
 
 Go to the releases tab and download the latest executable release.
 
+Once the executable is downloaded, open it to get into the game instantly.
+
 # Gameplay Inputs 
 
 W - Move Forward
